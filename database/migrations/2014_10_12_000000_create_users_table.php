@@ -18,8 +18,8 @@ return new class extends Migration
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
             $table->integer('phone_number')->nullable();
-            $table->enum('subscription', ['normal', 'upgraded']);
-            $table->enum('user_level', ['member', 'instructor', 'admin', 'sysadmin']);
+            $table->enum('subscription', ['normal', 'upgraded'])->default('normal');
+            $table->enum('user_level', ['member', 'instructor', 'admin', 'sysadmin'])->default('member');
             $table->rememberToken();
             $table->timestamps();
         });
