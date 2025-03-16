@@ -27,7 +27,7 @@ jobs:
           php-version: "8.4"
 
       - name: Install Composer Dependencies
-        run: composer install  --optimize-autoloader --no-dev --no-progress --no-interaction --prefer-dist
+        run: composer install --optimize-autoloader --no-dev --no-progress --no-interaction --prefer-dist
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -47,6 +47,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: ./public
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
