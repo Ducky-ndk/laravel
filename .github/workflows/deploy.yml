@@ -32,6 +32,9 @@ jobs:
       - name: Install NPM Dependencies
         run: npm run build
 
+      - name: Build project
+        run: npm run build
+
   deploy:
     environment:
       name: github-pages
