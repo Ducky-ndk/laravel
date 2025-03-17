@@ -1,0 +1,83 @@
+#!/bin/sh
+
+# exit 0: This indicates that the script or command executed successfully without any errors. A zero exit status generally means "success."
+# exit 1 (or any non-zero exit status): This indicates that an error occurred during the execution of the script or command. Non-zero exit statuses generally mean "failure."
+
+# this is a funcion to run a command and print a message
+run_command () {
+  COMMAND_NAME=$1
+  COMMAND_RUN=$2
+  (
+    # this will run the command with eval and redirect the output to a variable OUTPUT
+    # The 2>&1 part redirects stderr (standard error) to stdout (standard output), capturing both in the OUTPUT variable.
+    OUTPUT=$(eval "$COMMAND_RUN" 2>&1)
+
+    # Captures the exit status of the last command (i.e., the eval command).
+    status_code=$?
+
+    #Checks if the exit status is not equal to 0 (indicating an error). 
+    if [ $status_code -ne 0 ]; then
+      # If the exit status is not 0, it prints an error message 
+      printf "\r\033[K❌ %s \033[31m%s\033[0m\n" "$COMMAND_NAME" "failed" >&2
+
+      # It prints the captured output
+      # The /tmp directory is a standard directory on Unix-like operating systems that is used for storing temporary files.
+      # C:\Users\<yourUserName>\AppData\Local\Temp
+      echo "$OUTPUT" > "/tmp/${COMMAND_NAME}_pre-commit"
+
+      # It sets the HOOK_EXIT_CODE variable to 1
+      exit 1
+    else
+      printf "\r\033[K✅ %s \033[32m%s\033[0m\n" "$COMMAND_NAME" "passed" >&2
+    fi
+  ) &
+}
+
+printf "🦆 Executing pre-commit hook...\n"
+
+# this will check in the git diff if there are any staged files that are tsx, ts, js, jsx, css, md or json
+# and will store them in the FRONTEND_STAGED_FILES variable
+# example : printf "$FRONTEND_STAGED_FILES\n" will output the staged files 
+FRONTEND_STAGED_FILES=$(git diff --cached --name-only --diff-filter=AMR | grep -E '\.tsx?$|\.jsx?$|\.css|\.md|\.json' | sed 's/\$/\\$/g' | xargs)
+
+# If there are staged files then
+if [ "$FRONTEND_STAGED_FILES" ]; then
+  # run the unit tests
+  run_command "Test" "php artisan test"
+  
+  run_command "larastan" "./vendor/bin/phpstan analyse"
+
+  # wait for the command above to finish before continuing to the below commands
+  wait
+
+  # this will loop through all the files in the /tmp that ends with _pre-commit
+  # the run_command function will create a file with the name of the command and _pre-commit if there is an error orrure.
+  for OUTPUT_FILE in /tmp/*_pre-commit; do
+    # if theOUTPUT_FILE then continue to the OUTPUT_FILE
+    # meaning if there more command running beside the unit test . example : "prettier" or "phpstan" of "phpcs" check
+    if [ ! -f "$OUTPUT_FILE" ]; then
+      continue
+    fi
+
+    # if the there error then set the HOOK_EXIT_CODE to 1 to stop the commit process
+    HOOK_EXIT_CODE=1
+
+    # print the error file name
+    printf "\n----------------\n❌ %s\n\n" $(basename $OUTPUT_FILE '_output')
+
+    # This command prints the contents of the error file to the console.
+    cat "$OUTPUT_FILE"
+
+    # This command deletes the error file fater it using
+    # this will remote the temporary file that was created by the run_command function in the /tmp directory
+    rm "$OUTPUT_FILE"
+  done
+
+else
+    printf "ℹ️ No staged PHP files\n\n"
+fi
+
+printf "\n"
+# exit with the HOOK_EXIT_CODE if 1 then the commit will be stopped
+# if 0 then the commit will continue
+exit $HOOK_EXIT_CODE

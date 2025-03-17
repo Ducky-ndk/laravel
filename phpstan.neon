@@ -1,0 +1,18 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - vendor/nesbot/carbon/extension.neon
+# adding phpstan-baseline.neon to ingore some error
+    - phpstan-baseline.neon
+
+parameters:
+    # Level 10 is the highest level
+    level: 8
+    paths:
+        - app/
+
+
+#    ignoreErrors:
+#        - '#PHPDoc tag @var#'
+#
+#    excludePaths:
+#        - ./*/*/FileToBeExcluded.php
