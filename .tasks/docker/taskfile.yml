@@ -1,0 +1,29 @@
+# this is a taskfile for docker compose commands to group them in a single file
+version: "3"
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  down:
+    desc: "Stop all docker containers"
+    cmds:
+      - docker compose down --remove-orphans {{.CLI_ARGS}}
+
+  up:
+    desc: "Start all docker containers"
+    cmds:
+      - docker compose up {{.CLI_ARGS}} -d --build --remove-orphans --wait --wait-timeout 300
+
+  restart:
+    desc: Restart service containers
+    cmds:
+      - docker compose restart {{.CLI_ARGS}} --no-deps
+
+  remove:
+    desc: Removes stopped service containers
+    vars:
+      SERVICE: "{{.s}}"
+    cmds:
+      - docker compose rm {{.CLI_ARGS | default "-sf"}} {{.SERVICE}}
