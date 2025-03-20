@@ -1,0 +1,34 @@
+# https://taskfile.dev
+
+version: "3"
+
+includes:
+  # Include the docker taskfile to use the docker tasks
+  docker: ./.tasks/docker
+
+tasks:
+  default:
+    cmds:
+      - task --list
+
+  setup:
+    desc: "Setup the project"
+    cmds:
+      - task docker:down
+      - task docker:up
+      - npm i
+      - composer i
+      - php artisan key:generate
+      - php artisan migrate
+      # concurrently is a node package that allows you to run multiple commands concurrently in a single terminal
+      - npx concurrently "php artisan serve" "npm run dev"
+
+  app:test:
+    desc: "Run tests"
+    cmds:
+      - php artisan test
+
+  larastan:
+    desc: "Run larastan/phpstan"
+    cmds:
+      - php vendor/bin/phpstan analyse --memory-limit=2G --error-format=table
